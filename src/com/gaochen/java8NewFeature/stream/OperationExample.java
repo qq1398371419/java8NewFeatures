@@ -14,38 +14,38 @@ import java.util.stream.Stream;
  */
 public class OperationExample {
     public static void main(String[] args) {
+        Random random = new Random();
         List<Integer> list = new ArrayList<>();
         for(int i=0;i<10;i++) {
-            list.add(Math.random());
+            list.add(random.nextInt(10));
         }
         System.out.println("----------------map--------------------");
         //map
-        list.stream().map(i -> i + 10).forEach(System.out::println);
+        list.stream().map(i -> i + 10).forEach(System.out::println); //遍历执行 并有返回值
 
         System.out.println("----------------filter--------------------");
         //filter
-        list.stream().filter(i -> i > 5).forEach(System.out::println);
+        list.stream().filter(i -> i > 5).forEach(System.out::println); //遍历筛选出filter()内 返回值为true的元素
 
         //distinct
         System.out.println("----------------distinct--------------------");
-        List<Integer> doubleList = Stream.of(list, list).flatMap(Collection::stream).collect(Collectors.toList()); //1-10重复1次集合
-        doubleList.stream().distinct().forEach(System.out::println);
+        list.stream().distinct().forEach(System.out::println); //去重
 
         //sorted
         System.out.println("----------------sorted--------------------");
-        new HashSet<>(list).stream().sorted().forEach(System.out::println);
+        new HashSet<>(list).stream().sorted().forEach(System.out::println); //排序
 
         //peek
         System.out.println("----------------peek--------------------");
-        list.stream().peek(i -> System.out.println(i + 10)).forEach(System.out::println);
+        list.stream().peek(i -> System.out.println(i + 10)).forEach(System.out::println); //遍历执行peek 逻辑并返回原来的元素,相当于 list.map(i -> return i)
 
         //limit
         System.out.println("----------------limit--------------------");
-        list.stream().limit(5).forEach(System.out::println);
+        list.stream().limit(5).forEach(System.out::println); //取前N个
 
         //skip
         System.out.println("----------------skip--------------------");
-        list.stream().skip(3).forEach(System.out::println);
+        list.stream().skip(3).forEach(System.out::println); //跳过前N个
 
         //parallel
         System.out.println("----------------parallel--------------------");

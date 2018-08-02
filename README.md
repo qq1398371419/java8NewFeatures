@@ -17,6 +17,32 @@
 
 > Java 8在java.lang.Iterable接口中引入了forEach方法，这样在编写代码时我们只关注业务逻辑。 forEach方法将java.util.function.Consumer对象作为参数，因此它有助于将我们的业务逻辑放在我们可以重用的单独位置。让我们通过简单的例子看看每个用法。
 
+    List<Integer> myList = new ArrayList<Integer>();
+    for(int i=0; i<10; i++) myList.add(i);
+
+    //使用iterator
+    Iterator<Integer> iterator = myList.iterator();
+    while (iterator.hasNext()) {
+        Integer next = iterator.next();
+        System.out.println("Iterator Value::" + next);
+    }
+
+    //foreach + 匿名类
+    myList.forEach(new Consumer<Integer>() {
+
+        public void accept(Integer t) {
+            System.out.println("forEach anonymous class Value::"+t);
+        }
+
+    });
+
+    //使用consumer 接口
+    MyConsumer action = new MyConsumer();
+    myList.forEach(action);
+
+    //使用lambda表达式
+    myList.forEach(System.out::println);
+
 ##### 2.default and static methods in Interfaces(接口中的默认和静态方法)
 > jdk8之前，interface方法不能有实现，但是从Java 8开始，接口被增强为具有实现方法。我们可以使用default和static关键字来创建具有方法实现的接口。例如Iterable接口中的forEach方法实现是
 
@@ -26,7 +52,7 @@
             action.accept(t);
         }
 	}
-> 我们知道Java不会在类中提供多重继承，因为它会导致钻石问题。那么现在如何处理接口，因为接口现在类似于抽象类。解决方案是编译器将在此场景中抛出异常，我们将不得不在实现接口的类中提供实现逻辑。
+> 我们知道Java不会在类中提供多重继承，因为它会导致 Diamond Problem。那么现在如何处理接口，因为接口现在类似于抽象类。解决方案是编译器将在此场景中抛出异常，我们将不得不在实现接口的类中提供实现逻辑。
 ##### 3.Functional Interfaces and Lambda Expressions（function接口和Lambda表达式）
 > 如果你注意到上面的接口代码，你会注意到@FunctionalInterface注释。功能接口是Java 8中引入的新概念。**只有一个抽象方法的接口就变成了功能接口**。我们不需要使用@FunctionalInterface注释将接口标记为功能接口。 @FunctionalInterface注释是一种避免在功能界面中意外添加抽象方法的工具。您可以将其视为@Override注释，并且最佳实践是使用它。实例：java8 的runnable run接口，带有一个抽象方法:
 
@@ -38,10 +64,10 @@
 
 	//使用匿名类实例化
 	Runnable runnable = new Runnable() {
-    @Override
-    public void run() {
-        System.out.println("My Runnable");
-    }
+	    @Override
+	    public void run() {
+	        System.out.println("My Runnable");
+	    }
     };
 > 由于功能接口只有一个方法，因此lambda表达式可以很容易地提供方法实现。我们只需要提供方法参数和业务逻辑。例如，我们可以使用lambda表达式将上面的实现编写为：
 
@@ -55,7 +81,7 @@
     Interface1 interface1 = (s) -> System.out.println(s);
     interface1.method1("interface1 method");
 
-【lambda表达式扩展】
+**【lambda表达式扩展】**
 >  Java 中的 Lambda 表达式通常使用 (argument) -> (body) 语法书写，例如：
 	
 	(arg1, arg2...) -> { body }
@@ -71,7 +97,7 @@
 - 如果 Lambda 表达式的主体只有一条语句，花括号{}可省略。匿名函数的返回类型与该主体表达式一致
 - 如果 Lambda 表达式的主体包含一条以上语句，则表达式必须包含在花括号{}中（形成代码块）。匿- - 名函数的返回类型与代码块的返回类型一致，若没有返回则为空
 
-【函数式接口扩展】
+**【函数式接口扩展】**
 > 函数式接口是只包含一个抽象方法声明的接口,可以使用@FunctionalInterface标记
 	
 ###### JDK 8之前已有的函数式接口
