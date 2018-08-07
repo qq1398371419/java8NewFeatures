@@ -141,7 +141,173 @@
 > 参考[Java 8 中的 Streams API 详解](https://www.ibm.com/developerworks/cn/java/j-lo-java8streamapi/index.html "Java 8 中的 Streams API 详解")
 
 > 以下是示例代码
+    //从 Collection 和数组
+    List<Integer> list = new ArrayList<>();
+    for(int i=0;i<100;i++) {
+        list.add(i);
+    }
+    Stream<Integer> stream = list.stream(); //串行流
+    Stream<Integer> stream1 = list.parallelStream(); //并行流
+    Stream<Integer> stream2 = Arrays.stream(list.toArray(new Integer[0]));
+    Stream<Integer> stream3 = Stream.of(list.toArray(new Integer[0]));
 
+    //从 BufferedReader
+    BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("path")));
+    Stream<String> stream4 = bufferedReader.lines();
+
+    //静态工厂
+    IntStream stream5 = IntStream.rangeClosed(1, 100);//生成1-100 的int stream
+    Stream<Path> stream6 = Files.walk(Paths.get("path"), 100);
+
+    //自己构建 通过StreamSupport辅助类从spliterator产生流
+    Stream<Integer> stream7 = StreamSupport.stream(list.spliterator(), false);
+
+    //其它
+    Random random = new Random();
+    IntStream stream8 = random.ints();
+
+    BitSet bitSet = BitSet.valueOf(new long[]{1L, 2L, 3L});
+    IntStream stream9 = bitSet.stream();
+
+    Pattern pattern = Pattern.compile("\\d+");
+    Stream<String> stream10 = pattern.splitAsStream("111sda123sda");
+
+    JarFile jarFile = new JarFile("xxx.jar");
+    Stream<JarEntry> stream11 = jarFile.stream();
+
+##### 5.方法引用
+> 方法引用提供了非常有用的语法，可以直接引用已有Java类或对象（实例）的方法或构造器。与lambda联合使用，方法引用可以使语言的构造更紧凑简洁，减少冗余代码。
+> 下面，我们以定义了4个方法的Car这个类作为例子，区分Java中支持的4种不同的方法引用。[官方文档](https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html "官方文档")
+
+- 第一种方法引用是构造器引用，它的语法是Class::new，或者更一般的Class< T >::new。请注意构造器没有参数。
+
+
+    final Car car = Car.create(Car::new);
+    final List<Car> cars = Arrays.asList(car);
+- 第二种方法引用是静态方法引用，它的语法是Class::static_method。请注意这个方法接受一个Car类型的参数。
+
+
+    cars.forEach(Car::collide);
+- 第三种方法引用是特定类的任意对象的方法引用，它的语法是Class::method。请注意，这个方法没有参数。
+
+
+	cars.forEach( Car::repair );
+- 最后，第四种方法引用是特定对象的方法引用，它的语法是instance::method。请注意，这个方法接受一个Car类型的参数
+
+
+    final Car police = Car.create(Car::new);
+    cars.forEach(police::follow);
+
+##### 6.重复注解
+> 自从Java 5引入了注解机制，这一特性就变得非常流行并且广为使用。然而，使用注解的一个限制是相同的注解在同一位置只能声明一次，不能声明多次。Java 8打破了这条规则，引入了重复注解机制，这样相同的注解可以在同一地方声明多次。
+> 
+> 重复注解机制本身必须用@Repeatable注解。事实上，这并不是语言层面上的改变，更多的是编译器的技巧，底层的原理保持不变。让我们看一个快速入门的例子：
+
+	public class RepeatingAnnotations {
+	
+	    @Target( ElementType.TYPE )
+	    @Retention( RetentionPolicy.RUNTIME )
+	    public @interface Filters {
+	        Filter[] value();
+	    }
+	
+	    @Target( ElementType.TYPE )
+	    @Retention( RetentionPolicy.RUNTIME )
+	    @Repeatable( Filters.class )
+	    public @interface Filter {
+	        String value();
+	    }
+	
+	    @Filter( "filter1" )
+	    @Filter( "filter2" )
+	    public interface Filterable {
+	    }
+	
+	    public static void main(String[] args) {
+	        for( Filter filter: Filterable.class.getAnnotationsByType( Filter.class ) ) {
+	            System.out.println( filter.value() );
+	        }
+	    }
+	}
+> 
+> 正如我们看到的，这里有个使用@Repeatable( Filters.class )注解的注解类Filter，Filters仅仅是Filter注解的数组，但Java编译器并不想让程序员意识到Filters的存在。这样，接口Filterable就拥有了两次Filter（并没有提到Filter）注解。
+> 
+> 同时，反射相关的API提供了新的函数getAnnotationsByType()来返回重复注解的类型（请注意Filterable.class.getAnnotation( Filters.class )经编译器处理后将会返回Filters的实例）。
+
+##### 7.更好的类型推测机制
+Java 8在类型推测方面有了很大的提高。在很多情况下，编译器可以推测出确定的参数类型，这样就能使代码更整洁。让我们看一个例子：
+
+	package com.javacodegeeks.java8.type.inference;
+	 
+	public class Value< T > {
+	    public static< T > T defaultValue() { 
+	        return null; 
+	    }
+	     
+	    public T getOrDefault( T value, T defaultValue ) {
+	        return ( value != null ) ? value : defaultValue;
+	    }
+	}
+这里是Value< String >类型的用法。
+	package com.javacodegeeks.java8.type.inference;
+	 
+	public class TypeInference {
+	    public static void main(String[] args) {
+	        final Value< String > value = new Value<>();
+	        value.getOrDefault( "22", Value.defaultValue() );
+	    }
+	}
+##### 8.扩展注解的支持
+Java 8扩展了注解的上下文。现在几乎可以为任何东西添加注解：局部变量、泛型类、父类与接口的实现，就连方法的异常也能添加注解。下面演示几个例子：
+	package com.javacodegeeks.java8.annotations;
+	 
+	import java.lang.annotation.ElementType;
+	import java.lang.annotation.Retention;
+	import java.lang.annotation.RetentionPolicy;
+	import java.lang.annotation.Target;
+	import java.util.ArrayList;
+	import java.util.Collection;
+	 
+	public class Annotations {
+	    @Retention( RetentionPolicy.RUNTIME )
+	    @Target( { ElementType.TYPE_USE, ElementType.TYPE_PARAMETER } )
+	    public @interface NonEmpty {        
+	    }
+	         
+	    public static class Holder< @NonEmpty T > extends @NonEmpty Object {
+	        public void method() throws @NonEmpty Exception {           
+	        }
+	    }
+	         
+	    @SuppressWarnings( "unused" )
+	    public static void main(String[] args) {
+	        final Holder< String > holder = new @NonEmpty Holder< String >();       
+	        @NonEmpty Collection< @NonEmpty String > strings = new ArrayList<>();       
+	    }
+	}
+ElementType.TYPE_USE和ElementType.TYPE_PARAMETER是两个新添加的用于描述适当的注解上下文的元素类型。在Java语言中，注解处理API也有小的改动来识别新增的类型注解。
+
+##### 9.Optional
+> 到目前为止，臭名昭著的空指针异常是导致Java应用程序失败的最常见原因。以前，为了解决空指针异常，Google公司著名的Guava项目引入了Optional类，Guava通过使用检查空值的方式来防止代码污染，它鼓励程序员写更干净的代码。受到Google Guava的启发，Optional类已经成为Java 8类库的一部分。
+> 
+> Optional实际上是个容器：它可以保存类型T的值，或者仅仅保存null。Optional提供很多有用的方法，这样我们就不用显式进行空值检测。更多详情请参考官方文档。
+> 
+> 我们下面用两个小例子来演示如何使用Optional类：一个允许为空值，一个不允许为空值。
+> 
+    //如果Optional类的实例为非空值的话，isPresent()返回true，否从返回false。
+    // 为了防止Optional为空值，orElseGet()方法通过回调函数来产生一个默认值。map()函数对当前Optional的值进行转化，
+    // 然后返回一个新的Optional实例。orElse()方法和orElseGet()方法类似，但是orElse接受一个默认值而不是一个回调函数。
+    Optional< String > fullName = Optional.ofNullable( null );
+    System.out.println( "Full Name is set? " + fullName.isPresent() );
+    System.out.println( "Full Name: " + fullName.orElseGet( () -> "[none]" ) );
+    System.out.println( fullName.map( s -> "Hey " + s + "!" ).orElse( "Hey Stranger!" ) );
+> 另一个例子：
+> 
+    Optional< String > firstName = Optional.of( "Tom" );
+    System.out.println( "First Name is set? " + firstName.isPresent() );
+    System.out.println( "First Name: " + firstName.orElseGet( () -> "[none]" ) );
+    System.out.println( firstName.map( s -> "Hey " + s + "!" ).orElse( "Hey Stranger!" ) );
+    System.out.println();
 
 	
 
